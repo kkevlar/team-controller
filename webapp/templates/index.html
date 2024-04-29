@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Control Console</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    text-align: center;
+}
+
+button {
+    padding: 2vw 5vw; /* Adjust padding for both mobile and desktop */
+    font-size: 15vw; /* Adjust font size for both mobile and desktop */
+    margin: 10px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.start {
+    background-color: green;
+    color: white;
+}
+
+.team {
+    background-color: blue;
+    color: white;
+}
+
+.reset {
+    background-color: red;
+    color: white;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="startForm" action="/start" method="post">
+            <button class="start" type="submit">START</button>
+        </form>
+        <div class="button-container">
+        <form id="teamf1" action="/team1" method="post">
+            <button class="team" type="submit">1</button>
+        </form>
+        <form id="teamf2" action="/team2" method="post">
+            <button class="team" type="submit">2</button>
+        </form>
+        <form id="teamf3" action="/team3" method="post">
+            <button class="team" type="submit">3</button>
+        </form>
+        <form id="teamf4" action="/team4" method="post">
+            <button class="team" type="submit">4</button>
+        </form>
+        </div>
+        <form id="setupForm" action="/setup" method="post">
+            <button class="reset" type="submit">SETUP</button>
+        </form>
+    </div>
+</body>
+</html>

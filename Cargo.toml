@@ -1,2 +1,2 @@
 [workspace]
-members = ["ui_demo", "mjoy_core"]
+members = ["ui_demo", "mjoy_core", "command_server"]

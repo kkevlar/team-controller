@@ -1,0 +1,18 @@
+[package]
+name = "command_sever"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_json = "1.0.116"
+
+[lib]
+name = "command_server"
+path = "src/lib.rs"
+
+[[example]]
+name = "helloworld"
+path = "examples/helloworld.rs"
+
