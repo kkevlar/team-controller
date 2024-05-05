@@ -234,7 +234,7 @@ impl<'a> Outjoy<'a> {
                 let namedpath = namedpath.unwrap();
                 let common_name = &namedpath.common_name;
 
-                if context.hat_only_player_names.contains(&common_name) {
+                if context.stick_only_names.contains(&common_name) {
                     continue;
                 }
 
@@ -330,7 +330,7 @@ pub struct UpdateContext<'b, 'c, 'e, 'f> {
     pub event_path_lookup: &'b joypaths::EventPathLookup,
     pub gilrs: &'c mut gilrs::Gilrs,
     pub feedback: &'e mut mjoy_gui::gui::feedback_info::FeedbackInfo<'f>,
-    pub hat_only_player_names: &'b Vec<String>,
+    pub stick_only_names: &'b Vec<String>,
     pub button_threshold: f32,
 }
 
