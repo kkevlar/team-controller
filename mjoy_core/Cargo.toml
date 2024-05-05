@@ -18,4 +18,5 @@ mjoy_gui = {path = "../mjoy_gui"}
 regex = "1.5.4"
 rand = "0.8.5"
 tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 

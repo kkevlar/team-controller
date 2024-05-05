@@ -52,6 +52,7 @@ impl Binder {
         {
             if let Some(candidate_binding) = self.bindings_to_make.as_mut().unwrap().last().cloned()
             {
+                tracing::info!("I'm trying to bind {}", candidate_binding);
                 match self.perform_candidate_binding(
                     &candidate_binding,
                     gilrs,

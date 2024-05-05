@@ -1,8 +1,10 @@
 {
+    "controller_bindings_file": "bindings.json",
     "team_allocation": [2,2,1],
     "path_hash_salt": 10031,
     "path_common_name_max_length": 12,
     "team_hash_salt": 20010,
     "hat_only_players": [],
-    "number_of_multi_port_controllers_to_use": 1
+    "number_of_multi_port_controllers_to_use": 1,
+    "binding_names_file": "resources/controller_names.txt"
 }
