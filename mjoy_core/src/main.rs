@@ -2,10 +2,13 @@ mod bindings;
 mod injoy;
 mod joypaths;
 mod outjoy;
+mod team_select;
 
 use clap::Parser;
+use mjoy_gui::gui::feedback_info::FeedbackInfo;
 use rand;
 use serde::{Deserialize, Serialize};
+use std::cell::{self, RefCell};
 use std::collections::HashSet;
 use tracing;
 
@@ -145,61 +148,32 @@ fn main() {
     }
     let mut event_path_lookup = joypaths::EventPathLookup::repath(&config);
 
-    let feedback = {
-        let mut fb = Vec::new();
-
-        for thing in ["<", ">", "^", "v", "A", "B", "X", "Y", "L", "R", "t", "e"].iter() {
-            fb.push(mjoy_gui::gui::feedback_info::ButtonPress {
-                button: thing.to_string(),
-                state: mjoy_gui::gui::feedback_info::PressState::Unpressed,
-            });
-        }
-        fb
-    };
-    let feedback = mjoy_gui::gui::feedback_info::Presses(feedback);
-
-    let mut fbteams = Vec::new();
-    for team in frozen.teams.iter() {
-        let mut fbplayers = Vec::new();
-        for player in team.players.iter() {
-            let fbplayer = mjoy_gui::gui::feedback_info::Player {
-                player_name: player.clone(),
-                feedback: feedback.clone(),
-            };
-            fbplayers.push(fbplayer);
-        }
-
-        let fb_team = mjoy_gui::gui::feedback_info::Team {
-            team_name: &team.name,
-            players: fbplayers,
-            feedback: feedback.clone(),
-        };
-
-        fbteams.push(fb_team);
-    }
-    let mut fbinfo = mjoy_gui::gui::feedback_info::FeedbackInfo { teams: fbteams };
-
     let mut gui_teams = Vec::new();
-    use mjoy_gui::gui::Ui;
-
     for team in frozen.teams.iter() {
         gui_teams.push(team.name.clone());
     }
-
+    use mjoy_gui::gui::Ui;
     // let mut ui = Ui::new(
     //     gui_teams.as_slice(),
     //     mjoy_gui::gui::WidthHeight::new(1920, 1080),
     // );
 
-    let all_joys = outjoy::Outjoys::new(&frozen);
+    struct TopContext<'a> {
+        fbinfo: FeedbackInfo,
+        all_joys: outjoy::Outjoys<'a>,
+    }
+
+    let mut top_context = RefCell::new(Some(TopContext {
+        fbinfo: update_gui_teams(&frozen),
+        all_joys: outjoy::Outjoys::new(&frozen),
+    }));
+
     let mut thresh = 0.9f32;
     let mut change_thresh_time = std::time::Instant::now() + std::time::Duration::from_secs(1);
     let mut gui_render_time = std::time::Instant::now();
     let mut game_state: GameState = GameState::Binding;
     let mut binder = crate::bindings::Binder::new(config.binding_names_file.clone());
-    tracing::info!("hi1");
     loop {
-        tracing::info!("hi2");
         let event = gilrs.next_event();
 
         match &event {
@@ -221,6 +195,11 @@ fn main() {
 
         match game_state {
             GameState::GameActive => {
+                let TopContext {
+                    mut fbinfo,
+                    all_joys,
+                } = top_context.replace(None).unwrap();
+
                 all_joys.update(&mut outjoy::UpdateContext {
                     minimal_path_lookup: &mpl,
                     gilrs: &mut gilrs,
@@ -251,12 +230,28 @@ fn main() {
                         rand.min(0.95f32)
                     };
                 }
+
+                top_context.replace(Some(TopContext { fbinfo, all_joys }));
             }
             GameState::Binding => {
-                dbg!(&mpl);
                 binder.update(&gilrs, &event_path_lookup, &mut mpl);
             }
-            _ => unimplemented!(),
+            GameState::TeamSelect => {
+                top_context.replace(None);
+
+                let changed = team_select::mutate_team_selection(
+                    &mut frozen,
+                    &event_path_lookup,
+                    &mpl,
+                    &mut gilrs,
+                );
+                if changed {
+                    let fbinfo = update_gui_teams(&frozen);
+                    let all_joys = outjoy::Outjoys::new(&frozen);
+                    let new_context = TopContext { fbinfo, all_joys };
+                    top_context.replace(Some(new_context));
+                }
+            }
         };
 
         // if std::time::Instant::now()
@@ -269,4 +264,42 @@ fn main() {
         //     continue;
         // }
     }
+}
+
+fn update_gui_teams(frozen: &TeamLock) -> mjoy_gui::gui::feedback_info::FeedbackInfo {
+    let feedback = {
+        let mut fb = Vec::new();
+
+        for thing in ["<", ">", "^", "v", "A", "B", "X", "Y", "L", "R", "t", "e"].iter() {
+            fb.push(mjoy_gui::gui::feedback_info::ButtonPress {
+                button: thing.to_string(),
+                state: mjoy_gui::gui::feedback_info::PressState::Unpressed,
+            });
+        }
+        fb
+    };
+    let feedback = mjoy_gui::gui::feedback_info::Presses(feedback);
+
+    let mut fbteams = Vec::new();
+    for team in frozen.teams.iter() {
+        let mut fbplayers = Vec::new();
+        for player in team.players.iter() {
+            let fbplayer = mjoy_gui::gui::feedback_info::Player {
+                player_name: player.clone(),
+                feedback: feedback.clone(),
+            };
+            fbplayers.push(fbplayer);
+        }
+
+        let fb_team = mjoy_gui::gui::feedback_info::Team {
+            team_name: team.name.clone(),
+            players: fbplayers,
+            feedback: feedback.clone(),
+        };
+
+        fbteams.push(fb_team);
+    }
+    let mut fbinfo = mjoy_gui::gui::feedback_info::FeedbackInfo { teams: fbteams };
+
+    fbinfo
 }

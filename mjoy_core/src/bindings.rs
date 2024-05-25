@@ -67,7 +67,6 @@ impl Binder {
                     }
                     Err(_) => {
                         // Binding was not successful, do not pop the candidate and do not update the time
-                        // Optionally, you can decide to retry or handle this case differently
                     }
                 }
             } else {

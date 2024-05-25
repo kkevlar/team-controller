@@ -72,7 +72,7 @@ impl<'a> Outjoy<'a> {
         }
     }
 
-    fn update_axes<'b, 'c, 'd, 'e, 'f>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e, 'f>) {
+    fn update_axes<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         use crate::injoy::NamedAxis;
 
         let mut fb_team = None;
@@ -213,10 +213,7 @@ impl<'a> Outjoy<'a> {
         }
     }
 
-    fn update_buttons<'b, 'c, 'd, 'e, 'f>(
-        &'a self,
-        context: &'d mut UpdateContext<'b, 'c, 'e, 'f>,
-    ) {
+    fn update_buttons<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         use crate::injoy::NamedButton;
 
         let mut fb_team = None;
@@ -336,18 +333,18 @@ impl<'a> Outjoy<'a> {
         }
     }
 
-    pub fn update<'b, 'c, 'd, 'e, 'f>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e, 'f>) {
+    pub fn update<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         self.update_axes(context);
         self.update_buttons(context);
         self.joy.synchronise().unwrap();
     }
 }
 
-pub struct UpdateContext<'b, 'c, 'e, 'f> {
+pub struct UpdateContext<'b, 'c, 'e> {
     pub event_path_lookup: &'b joypaths::EventPathLookup,
     pub minimal_path_lookup: &'b joypaths::MinimalPathLookup,
     pub gilrs: &'c mut gilrs::Gilrs,
-    pub feedback: &'e mut mjoy_gui::gui::feedback_info::FeedbackInfo<'f>,
+    pub feedback: &'e mut mjoy_gui::gui::feedback_info::FeedbackInfo,
     pub hat_only_player_names: &'b Vec<String>,
     pub button_threshold: f32,
 }
@@ -361,7 +358,7 @@ impl<'a> Outjoys<'a> {
         Self { outjoys }
     }
 
-    pub fn update<'b, 'c, 'd, 'e, 'f>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e, 'f>) {
+    pub fn update<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         for outjoy in self.outjoys.iter() {
             outjoy.update(context);
         }

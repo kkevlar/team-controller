@@ -1,6 +1,6 @@
 #[derive(Clone)]
-pub struct FeedbackInfo<'a> {
-    pub teams: Vec<Team<'a>>,
+pub struct FeedbackInfo {
+    pub teams: Vec<Team>,
 }
 #[derive(Clone)]
 pub struct Player {
@@ -21,8 +21,8 @@ pub struct ButtonPress {
 pub struct Presses(pub Vec<ButtonPress>);
 
 #[derive(Clone)]
-pub struct Team<'a> {
-    pub team_name: &'a str,
+pub struct Team {
+    pub team_name: String,
     pub players: Vec<Player>,
     pub feedback: Presses,
 }
