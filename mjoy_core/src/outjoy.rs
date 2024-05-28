@@ -5,12 +5,12 @@ use gilrs;
 use software_joystick::*;
 use strum::IntoEnumIterator;
 
-pub struct Outjoys<'a> {
-    pub outjoys: Vec<Outjoy<'a>>,
+pub struct Outjoys {
+    pub outjoys: Vec<Outjoy>,
 }
 
-pub struct Outjoy<'a> {
-    team: &'a Team,
+pub struct Outjoy {
+    team: Team,
     joy: Joystick,
 }
 
@@ -36,8 +36,8 @@ fn inaxis_to_outaxis(a: &crate::injoy::NamedAxis) -> software_joystick::Axis {
     }
 }
 
-impl<'a> Outjoy<'a> {
-    pub fn new(team: &'a Team, index: u32) -> Self {
+impl Outjoy {
+    pub fn new(team: Team, index: u32) -> Self {
         let joy = Joystick::new(format!("Buster{}", index)).unwrap();
         Self { team, joy }
     }
@@ -72,7 +72,7 @@ impl<'a> Outjoy<'a> {
         }
     }
 
-    fn update_axes<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
+    fn update_axes<'b, 'c, 'd, 'e>(&self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         use crate::injoy::NamedAxis;
 
         let mut fb_team = None;
@@ -213,7 +213,7 @@ impl<'a> Outjoy<'a> {
         }
     }
 
-    fn update_buttons<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
+    fn update_buttons<'b, 'c, 'd, 'e>(&self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         use crate::injoy::NamedButton;
 
         let mut fb_team = None;
@@ -333,7 +333,7 @@ impl<'a> Outjoy<'a> {
         }
     }
 
-    pub fn update<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
+    pub fn update<'b, 'c, 'd, 'e>(&self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         self.update_axes(context);
         self.update_buttons(context);
         self.joy.synchronise().unwrap();
@@ -349,16 +349,16 @@ pub struct UpdateContext<'b, 'c, 'e> {
     pub button_threshold: f32,
 }
 
-impl<'a> Outjoys<'a> {
-    pub fn new(tl: &'a TeamLock) -> Self {
+impl Outjoys {
+    pub fn new(tl: &TeamLock) -> Self {
         let mut outjoys = Vec::new();
         for team in tl.teams.iter() {
-            outjoys.push(Outjoy::new(team, team.out_index));
+            outjoys.push(Outjoy::new(team.clone(), team.out_index));
         }
         Self { outjoys }
     }
 
-    pub fn update<'b, 'c, 'd, 'e>(&'a self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
+    pub fn update<'b, 'c, 'd, 'e>(&self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
         for outjoy in self.outjoys.iter() {
             outjoy.update(context);
         }

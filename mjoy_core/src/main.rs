@@ -27,7 +27,7 @@ pub struct Config {
     binding_names_file: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Team {
     name: String,
     players: Vec<String>,
@@ -158,9 +158,9 @@ fn main() {
     //     mjoy_gui::gui::WidthHeight::new(1920, 1080),
     // );
 
-    struct TopContext<'a> {
+    struct TopContext {
         fbinfo: FeedbackInfo,
-        all_joys: outjoy::Outjoys<'a>,
+        all_joys: outjoy::Outjoys,
     }
 
     let mut top_context = RefCell::new(Some(TopContext {
