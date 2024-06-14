@@ -81,13 +81,13 @@ pub fn mutate_team_selection(
         let desired_team_index = match (current_team_index, (values[0], values[1])) {
             (None, _) => None,
             (Some(0), (1, _)) => Some(1),
-            (Some(0), (_, -1)) => Some(2),
+            (Some(0), (_, 1)) => Some(2),
             (Some(1), (-1, _)) => Some(0),
-            (Some(1), (_, -1)) => Some(3),
+            (Some(1), (_, 1)) => Some(3),
             (Some(2), (1, _)) => Some(3),
-            (Some(2), (_, 1)) => Some(0),
+            (Some(2), (_, -1)) => Some(0),
             (Some(3), (-1, _)) => Some(2),
-            (Some(3), (_, 1)) => Some(1),
+            (Some(3), (_, -1)) => Some(1),
             (Some(_), _) => None,
         };
 

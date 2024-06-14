@@ -39,6 +39,7 @@ pub struct TeamLock {
     teams: Vec<Team>,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum GameState {
     Binding,
     TeamSelect,
@@ -89,12 +90,29 @@ fn main() {
                 .expect("Failed to parse frozen file");
         frozen
     } else {
-        let team = Team {
+        let team0 = Team {
             name: "Etherial Narwhals".to_owned(),
             players: vec![],
             out_index: 0,
         };
-        let tl = TeamLock { teams: vec![team] };
+        let team1 = {
+            let mut t = team0.clone();
+            t.out_index = 1;
+            t
+        };
+        let team2 = {
+            let mut t = team0.clone();
+            t.out_index = 2;
+            t
+        };
+        let team3 = {
+            let mut t = team0.clone();
+            t.out_index = 3;
+            t
+        };
+        let tl = TeamLock {
+            teams: vec![team0, team1, team2, team3],
+        };
         tl
     };
     dbg!(&frozen);
@@ -153,10 +171,10 @@ fn main() {
         gui_teams.push(team.name.clone());
     }
     use mjoy_gui::gui::Ui;
-    // let mut ui = Ui::new(
-    //     gui_teams.as_slice(),
-    //     mjoy_gui::gui::WidthHeight::new(1920, 1080),
-    // );
+    let mut ui = Ui::new(
+        gui_teams.as_slice(),
+        mjoy_gui::gui::WidthHeight::new(1920, 1080),
+    );
 
     struct TopContext {
         fbinfo: FeedbackInfo,
@@ -171,8 +189,9 @@ fn main() {
     let mut thresh = 0.9f32;
     let mut change_thresh_time = std::time::Instant::now() + std::time::Duration::from_secs(1);
     let mut gui_render_time = std::time::Instant::now();
-    let mut game_state: GameState = GameState::Binding;
+    let mut game_state: GameState = GameState::GameActive;
     let mut binder = crate::bindings::Binder::new(config.binding_names_file.clone());
+    let mut team_select_time: Option<std::time::Instant> = None;
     loop {
         let event = gilrs.next_event();
 
@@ -191,6 +210,12 @@ fn main() {
         // Have gilrs process all events so the cached state is as up to date as possible
         if event.is_some() {
             continue;
+        }
+
+        if let Some(team_select_time) = team_select_time {
+            if !team_select_time.elapsed().is_zero() {
+                game_state = GameState::GameActive;
+            }
         }
 
         match game_state {
@@ -234,10 +259,19 @@ fn main() {
                 top_context.replace(Some(TopContext { fbinfo, all_joys }));
             }
             GameState::Binding => {
-                binder.update(&gilrs, &event_path_lookup, &mut mpl);
+                let result = binder.update(&gilrs, &event_path_lookup, &mut mpl);
+                mpl.write_to_disk(&config.controller_bindings_file);
+                use bindings::UpdateState;
+                match result {
+                    UpdateState::Done => game_state = GameState::TeamSelect,
+                    _ => (),
+                }
             }
             GameState::TeamSelect => {
-                top_context.replace(None);
+                if team_select_time.is_none() {
+                    team_select_time =
+                        Some(std::time::Instant::now() + std::time::Duration::from_secs(10));
+                }
 
                 let changed = team_select::mutate_team_selection(
                     &mut frozen,
@@ -250,19 +284,26 @@ fn main() {
                     let all_joys = outjoy::Outjoys::new(&frozen);
                     let new_context = TopContext { fbinfo, all_joys };
                     top_context.replace(Some(new_context));
+
+                    let frozen_json = serde_json::to_string_pretty(&frozen).unwrap();
+                    std::fs::write(frozen_path, frozen_json).unwrap();
                 }
             }
         };
 
-        // if std::time::Instant::now()
-        //     .checked_duration_since(gui_render_time)
-        //     .is_some()
-        // {
-        //     gui_render_time = std::time::Instant::now() + std::time::Duration::from_millis(50);
-        //     ui.render(&fbinfo, false);
-        // } else {
-        //     continue;
-        // }
+        if std::time::Instant::now()
+            .checked_duration_since(gui_render_time)
+            .is_some()
+        {
+            gui_render_time = std::time::Instant::now() + std::time::Duration::from_millis(50);
+            if let Some(tc) = top_context.borrow().as_ref() {
+                ui.render(&tc.fbinfo, game_state == GameState::GameActive);
+            } else {
+                tracing::error!("No update");
+            }
+        } else {
+            continue;
+        }
     }
 }
 

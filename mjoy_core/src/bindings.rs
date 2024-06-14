@@ -13,6 +13,7 @@ pub struct Binder {
     bindings_filepath: String,
     bindings_to_make: Option<Vec<String>>,
     next_binding_allowed_time: Option<Instant>,
+    next_print_time: Instant,
     cached_state: UpdateState,
 }
 
@@ -23,6 +24,7 @@ impl Binder {
             bindings_to_make: None,
             next_binding_allowed_time: None,
             cached_state: UpdateState::Binding,
+            next_print_time: Instant::now(),
         }
     }
 
@@ -52,7 +54,10 @@ impl Binder {
         {
             if let Some(candidate_binding) = self.bindings_to_make.as_mut().unwrap().last().cloned()
             {
-                tracing::info!("I'm trying to bind {}", candidate_binding);
+                if !self.next_print_time.elapsed().is_zero() {
+                    tracing::info!("I'm trying to bind {}", candidate_binding);
+                    self.next_print_time += Duration::from_secs(1);
+                }
                 match self.perform_candidate_binding(
                     &candidate_binding,
                     gilrs,
@@ -110,8 +115,35 @@ impl Binder {
 
                 // Correct lookup and mutation process
                 if let Some(devpath_key) = event_path_lookup.0.get(devpath) {
-                    if let Some(named_path) = mpl.0.get_mut(devpath_key) {
-                        named_path.common_name = Some(candidate_binding.to_string());
+                    if mpl.0.get(devpath_key).is_some() {
+                        mpl.0.get_mut(devpath_key).unwrap().common_name =
+                            Some(candidate_binding.to_string());
+
+                        mpl.0.retain(|k, v| {
+                            if devpath_key != k {
+                                match v.common_name.as_ref() {
+                                    Some(s) => s != candidate_binding,
+                                    None => true,
+                                }
+                            } else {
+                                true
+                            }
+                        });
+
+                        for (k, v) in mpl.0.iter_mut() {
+                            if k != devpath_key {
+                                let should_un_name_them = if let Some(cn) = v.common_name.as_ref() {
+                                    cn == candidate_binding
+                                } else {
+                                    false
+                                };
+
+                                if should_un_name_them {
+                                    v.common_name = None;
+                                }
+                            }
+                        }
+
                         return Ok(());
                     }
                 }

@@ -110,7 +110,7 @@ impl Outjoy {
                 }
                 let named_path = named_path.unwrap();
                 let Some(common_name) : Option<&String> = named_path.common_name.as_ref() else{
-                    tracing::warn!("BAD!");
+                    // NO comomon name ! ok 
                     continue;
                 };
 
@@ -244,7 +244,7 @@ impl Outjoy {
                 let named_path = named_path.unwrap();
                 let Some(common_name) = named_path.common_name.as_ref() else
                 {
-                    tracing::warn!("BAD");
+                    // No common name, thats ok
                     continue;
                 };
 
