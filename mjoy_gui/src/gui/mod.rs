@@ -132,7 +132,22 @@ impl Ui {
         ui
     }
 
-    pub fn render(&mut self, feedback: &FeedbackInfo, show_logos: bool) {
+    pub fn render(
+        &mut self,
+        feedback: &FeedbackInfo,
+        show_logos: bool,
+        bonus_name: Option<String>,
+    ) {
+        if let Some(name) = bonus_name {
+            self.window.draw_text(
+                &name,
+                &kiss3d::nalgebra::Point2::new(20.0, 20.0),
+                60.0,
+                &self.font,
+                &kiss3d::nalgebra::Point3::new(1.0, 1.0, 1.0),
+            );
+        }
+
         if show_logos && !self.did_gui_on {
             manipulate_emulator::resize::resize_and_focus_matching(
                 &regex::Regex::new("Dolphin.*FPS").unwrap(),

@@ -14,6 +14,7 @@ pub struct NamedPath {
     pub common_name: Option<String>,
 }
 
+#[derive(Debug)]
 pub struct EventPathLookup(pub HashMap<String, String>);
 
 #[derive(Debug)]

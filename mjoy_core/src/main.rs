@@ -5,6 +5,7 @@ mod outjoy;
 mod team_select;
 
 use clap::Parser;
+use command_server;
 use mjoy_gui::gui::feedback_info::FeedbackInfo;
 use rand;
 use serde::{Deserialize, Serialize};
@@ -62,6 +63,9 @@ fn main() {
     let config = serde_json::from_str::<Config>(&std::fs::read_to_string(&args.config).unwrap())
         .expect("Failed to parse config file");
     dbg!(&config);
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    let server_handle = std::thread::spawn(|| command_server::field_commands_forever(tx));
 
     // Read configuration file .json file
     let mut mpl = joypaths::MinimalPathLookup::read_from_disk(&config.controller_bindings_file);
@@ -121,7 +125,6 @@ fn main() {
     dbg!(&frozen);
 
     // Check frozen
-    let mut total_player_count = 0;
     let mut missing_players = Vec::new();
     for team in frozen.teams.iter() {
         for player in team.players.iter() {
@@ -137,7 +140,6 @@ fn main() {
             if fail {
                 missing_players.push(player.clone());
             }
-            total_player_count += 1;
         }
     }
 
@@ -194,7 +196,7 @@ fn main() {
     let mut gui_render_time = std::time::Instant::now();
     let mut game_state: GameState = GameState::TeamSelect;
     let mut binder = crate::bindings::Binder::new(config.binding_names_file.clone());
-    let mut team_select_time: Option<std::time::Instant> = None;
+    let mut candidate = None;
     loop {
         let event = gilrs.next_event();
 
@@ -203,8 +205,9 @@ fn main() {
                 event: gilrs::EventType::Connected | gilrs::EventType::Disconnected,
                 ..
             }) => {
-                event_path_lookup = joypaths::EventPathLookup::repath(&config);
                 mpl.add_missing_paths_for_joys(&config);
+                event_path_lookup = joypaths::EventPathLookup::repath(&config);
+                dbg!((&mpl, &event_path_lookup));
                 continue;
             }
             _ => {}
@@ -215,14 +218,21 @@ fn main() {
             continue;
         }
 
-        if let Some(team_select_time) = team_select_time {
-            if !team_select_time.elapsed().is_zero() {
-                game_state = GameState::GameActive;
+        use command_server::Command;
+        match rx.try_recv() {
+            Ok(Command::Setup) => {
+                binder = crate::bindings::Binder::new(config.binding_names_file.clone());
+                game_state = GameState::Binding
             }
+            Ok(Command::Teams(_)) => game_state = GameState::TeamSelect,
+            Ok(Command::Start) => game_state = GameState::GameActive,
+            Err(_) => (),
         }
 
         match game_state {
             GameState::GameActive => {
+                candidate = None;
+
                 let TopContext {
                     mut fbinfo,
                     all_joys,
@@ -266,15 +276,15 @@ fn main() {
                 mpl.write_to_disk(&config.controller_bindings_file);
                 use bindings::UpdateState;
                 match result {
-                    UpdateState::Done => game_state = GameState::TeamSelect,
-                    _ => (),
+                    UpdateState::Done => {
+                        candidate = None;
+                        game_state = GameState::TeamSelect
+                    }
+                    UpdateState::Binding(cand) => candidate = cand,
                 }
             }
             GameState::TeamSelect => {
-                if team_select_time.is_none() {
-                    team_select_time =
-                        Some(std::time::Instant::now() + std::time::Duration::from_secs(10));
-                }
+                candidate = None;
 
                 let changed = team_select::mutate_team_selection(
                     &mut frozen,
@@ -300,7 +310,7 @@ fn main() {
         {
             gui_render_time = std::time::Instant::now() + std::time::Duration::from_millis(50);
             if let Some(tc) = top_context.borrow().as_ref() {
-                ui.render(&tc.fbinfo, game_state == GameState::GameActive);
+                ui.render(&tc.fbinfo, game_state == GameState::GameActive, candidate);
             } else {
                 tracing::error!("No update");
             }

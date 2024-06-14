@@ -3,10 +3,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::time::{Duration, Instant};
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub enum UpdateState {
     Done,
-    Binding,
+    Binding(Option<String>),
 }
 
 pub struct Binder {
@@ -23,7 +23,7 @@ impl Binder {
             bindings_filepath,
             bindings_to_make: None,
             next_binding_allowed_time: None,
-            cached_state: UpdateState::Binding,
+            cached_state: UpdateState::Binding(None),
             next_print_time: Instant::now(),
         }
     }
@@ -58,6 +58,9 @@ impl Binder {
                     tracing::info!("I'm trying to bind {}", candidate_binding);
                     self.next_print_time += Duration::from_secs(1);
                 }
+
+                self.cached_state = UpdateState::Binding(Some(candidate_binding.to_owned()));
+
                 match self.perform_candidate_binding(
                     &candidate_binding,
                     gilrs,
@@ -80,7 +83,7 @@ impl Binder {
             }
         }
 
-        self.cached_state
+        self.cached_state.clone()
     }
 
     pub fn perform_candidate_binding(
