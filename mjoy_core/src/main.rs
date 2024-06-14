@@ -293,8 +293,16 @@ fn main() {
                     &mut gilrs,
                 );
                 if changed {
+                    let TopContext {
+                        mut fbinfo,
+                        mut all_joys,
+                    } = top_context.replace(None).unwrap();
+
                     let fbinfo = update_gui_teams(&frozen);
-                    let all_joys = outjoy::Outjoys::new(&frozen);
+                    let all_joys = {
+                        all_joys.overwrite(&frozen);
+                        all_joys
+                    };
                     let new_context = TopContext { fbinfo, all_joys };
                     top_context.replace(Some(new_context));
 

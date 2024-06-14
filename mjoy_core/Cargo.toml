@@ -15,6 +15,7 @@ gilrs = {path = "../vendored/gilrs/gilrs"}
 serde = {version = "1.0.160", features = ["derive"]}
 serde_json = "1.0.96"
 mjoy_gui = {path = "../mjoy_gui"}
+command_server = {path = "../command_server"}
 regex = "1.5.4"
 rand = "0.8.5"
 tracing = "0.1.40"

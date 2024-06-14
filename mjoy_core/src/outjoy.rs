@@ -42,6 +42,10 @@ impl Outjoy {
         Self { team, joy }
     }
 
+    fn mutate_team(&mut self, team: Team) {
+        self.team = team;
+    }
+
     fn inaxis_to_letter(a: &crate::injoy::NamedAxis, f: f32) -> Option<String> {
         use crate::injoy::NamedAxis;
         match a {
@@ -350,6 +354,12 @@ impl Outjoys {
             outjoys.push(Outjoy::new(team.clone(), team.out_index));
         }
         Self { outjoys }
+    }
+
+    pub fn overwrite(&mut self, tl: &TeamLock) {
+        for (i, team) in tl.teams.iter().enumerate() {
+            self.outjoys.get_mut(i).unwrap().mutate_team(team.clone());
+        }
     }
 
     pub fn update<'b, 'c, 'd, 'e>(&self, context: &'d mut UpdateContext<'b, 'c, 'e>) {
