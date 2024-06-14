@@ -91,22 +91,25 @@ fn main() {
         frozen
     } else {
         let team0 = Team {
-            name: "Etherial Narwhals".to_owned(),
+            name: "Elemental Moose".to_owned(),
             players: vec![],
             out_index: 0,
         };
         let team1 = {
             let mut t = team0.clone();
+            t.name = "Lucky Bulldogs".to_owned();
             t.out_index = 1;
             t
         };
         let team2 = {
             let mut t = team0.clone();
+            t.name = "Potato Sluts".to_owned();
             t.out_index = 2;
             t
         };
         let team3 = {
             let mut t = team0.clone();
+            t.name = "Stubborn TrashPandas".to_owned();
             t.out_index = 3;
             t
         };
@@ -189,7 +192,7 @@ fn main() {
     let mut thresh = 0.9f32;
     let mut change_thresh_time = std::time::Instant::now() + std::time::Duration::from_secs(1);
     let mut gui_render_time = std::time::Instant::now();
-    let mut game_state: GameState = GameState::GameActive;
+    let mut game_state: GameState = GameState::TeamSelect;
     let mut binder = crate::bindings::Binder::new(config.binding_names_file.clone());
     let mut team_select_time: Option<std::time::Instant> = None;
     loop {

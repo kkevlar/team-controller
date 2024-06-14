@@ -177,10 +177,7 @@ impl Outjoy {
             }
 
             let average = match count {
-                0 => {
-                    eprintln!("No players found for team {}", self.team.name);
-                    0 as f32
-                }
+                0 => 0 as f32,
                 _ => sum / count as f32,
             };
             let average = average.clamp(-1.0f32, 1.0f32);
@@ -303,10 +300,7 @@ impl Outjoy {
             }
 
             let average = match count {
-                0 => {
-                    eprintln!("No players found for team");
-                    0 as f32
-                }
+                0 => 0 as f32,
                 _ => sum / count as f32,
             };
 
