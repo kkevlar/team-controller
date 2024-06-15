@@ -107,7 +107,7 @@ fn main() {
         };
         let team2 = {
             let mut t = team0.clone();
-            t.name = "Potato Sluts".to_owned();
+            t.name = "Orange Dragons".to_owned();
             t.out_index = 2;
             t
         };
